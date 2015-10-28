@@ -25,7 +25,7 @@ public class ResultOutput {
 		System.out.println("载入准确率测试文档：" + TestPath);
 		System.out.println("载入人工分词文档：" + StardPath + "/n");
 		ResultOutput output = new ResultOutput();
-		output.PrintAccuracyRate();
+//		output.PrintAccuracyRate();
 		System.out.println();
 
 		try{
@@ -109,5 +109,7 @@ public class ResultOutput {
 			System.out.print(word + "=" + df.format(value) + "    ");
 			wordNum++;
 		}
+		System.out.println();
+		System.out.println();
 	}
 }

@@ -18,11 +18,14 @@ public class TextManipulation {
 	 * 存储分词词典
 	 */
 	private Map<String, Integer> DictMap = new HashMap<String, Integer>();
-	private List<String> StopMap = new ArrayList<String>();
-	private int WordNum = 0;
+	private List<String> StopList = new ArrayList<String>();
+	private List<String> NameList = new ArrayList<String>();
+	private List<String> NoiseList = new ArrayList<String>();
 	
 	private String DictPath = "./dictionary/dic.txt";
 	private String StopWordPath = "./dictionary/stopwords.txt";
+	private String NameWordPath = "./dictionary/surname.txt";
+	private String NoiseWordPath = "./dictionary/noise.txt";
 	
 	/**
 	 * 最大切词长度,即为五个汉字
@@ -55,12 +58,30 @@ public class TextManipulation {
 		while ((line = br.readLine()) != null) {
 			String[] temp = line.split(" ");
 			line = temp[0].trim();
-			StopMap.add(line);
+			StopList.add(line);
 		}
 		br.close();
 	}
 
 
+	private void getNameWord() throws Exception{
+		BufferedReader br = new BufferedReader(new FileReader(NameWordPath));
+		String line = null;
+		while ((line = br.readLine()) != null) {
+			NameList.add(line);
+		}
+		br.close();
+	}
+	
+	private void getNoiseWord() throws Exception{
+		BufferedReader br = new BufferedReader(new FileReader(NoiseWordPath));
+		String line = null;
+		while ((line = br.readLine()) != null) {
+			NoiseList.add(line);
+		}
+		br.close();
+	}
+	
 	/**
 	 * 读取输入文本文件
 	 * @param FilePath
@@ -343,7 +364,7 @@ public class TextManipulation {
 	 */
 	public List<String> cutStopWord(List<String> result){
 		for(int i=result.size()-1; i >= 0; i--){
-			for(String word:StopMap){
+			for(String word:StopList){
 				if(word.equals(result.get(i))){
 					result.remove(i);
 				}
@@ -357,7 +378,7 @@ public class TextManipulation {
 	 * @param result
 	 * @return
 	 */
-	public List<String> cutMark(List<String> result){
+	private List<String> cutMark(List<String> result){
 		List<String> newlist = new ArrayList<String>();
 		for (int i = 0; i < result.size(); i++) {
 			String temp = result.get(i);
@@ -369,6 +390,31 @@ public class TextManipulation {
 		}
 		return newlist;
 	}
+	
+	private List<String> getName(List<String> unNameList){
+		for(int i=0; i<unNameList.size(); i++){
+			for(int j=0; j<NameList.size(); j++){
+				if(unNameList.get(i).equals(NameList.get(j))){
+					for(int k=1; k<3; k++){
+						if(unNameList.get(i+1).length() == 1){
+							boolean flag = false;
+							for(String word:NoiseList){
+								if(unNameList.get(i+1).equals(word)){
+									flag = true;
+								}
+							}
+							if(flag == true){
+								break;
+							}
+							unNameList.set(i, unNameList.get(i)+unNameList.get(i+1));
+							unNameList.remove(i+1);
+						}
+					}
+				}
+			}
+		}
+		return unNameList;
+	}
 
 	/**
 	 * 对输入文件进行分词，可选是否去停词
@@ -379,30 +425,25 @@ public class TextManipulation {
 	 * @return
 	 * @throws Exception
 	 */
-	//public List<String> WordCut(String FilePath, boolean NoStop) throws Exception{
 	public List<String> WordCut(String FilePath, boolean NoStop) throws Exception{
 		String wordString = readFile(FilePath);
 		List<String> resultList;
-		TextManipulation wordSplit = null;
-		try {
-			wordSplit = new TextManipulation();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		wordSplit.getStopWord();
+		List<String> unMergeName;
+		getStopWord();
+		getNameWord();
+		getNoiseWord();
 		if(!NoStop){
-			resultList = wordSplit.resultWord(wordString);
-			WordNum = resultList.size();
+			unMergeName = resultWord(wordString);
+			resultList = getName(unMergeName);
 		} else {
-			List<String> rawList = wordSplit.resultWord(wordString);
-			WordNum = rawList.size();
-			resultList = wordSplit.cutStopWord(rawList);
+			List<String> rawList = resultWord(wordString);
+			System.out.println(rawList);
+			unMergeName = getName(rawList);
+			System.out.println(unMergeName);
+			resultList = cutStopWord(unMergeName);
+			System.out.println(resultList);
 		}
-		List<String> returnList = wordSplit.cutMark(resultList);
+		List<String> returnList = cutMark(resultList);
 		return returnList;
-	}
-	
-	public Integer getWordNum(){
-		return WordNum;
 	}
 }
